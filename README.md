@@ -20,7 +20,7 @@ Built to demonstrate Django, DRF, JWT auth, and business logic structuring.
 - 11 unit and integration tests
 
 ## Setup
-git clone https://github.com/YOUR_USERNAME/procurement-api.git
+git clone https://github.com/Rushabh-15/procurement-api.git
 cd procurement-api
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
