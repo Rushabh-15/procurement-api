@@ -5,7 +5,7 @@ A backend REST API simulating a real Source-to-Pay (S2P) procurement workflow.
 Built to demonstrate Django, DRF, JWT auth, and business logic structuring.
 
 ## Tech stack
-- Python 3.11 · Django 4.x · Django REST Framework
+- Python 3.11 · Django 6.0 · Django REST Framework
 - SimpleJWT (stateless authentication)
 - spaCy (NLP invoice parsing)
 - SQLite (dev) · PostgreSQL-ready
@@ -17,7 +17,7 @@ Built to demonstrate Django, DRF, JWT auth, and business logic structuring.
 - NLP invoice parser with per-field confidence scoring
 - Overdue invoice detection
 - Custom permissions, filtering, search, and pagination
-- 11 unit and integration tests
+- 14 unit and integration tests
 
 ## Setup
 git clone https://github.com/Rushabh-15/procurement-api.git
