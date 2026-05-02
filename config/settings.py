@@ -14,6 +14,8 @@ from decouple import config
 
 from pathlib import Path
 
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,7 +28,19 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", cast = bool, default = False)
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# Allow requests from the React dev server only
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
+# Allow the Authorization header so JWT tokens can be sent
+CORS_ALLOW_HEADERS = [
+    'authorization',
+    'content-type',
+    'accept',
+    'origin',
+]
 
 ALLOWED_HOSTS = []
 
@@ -41,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
@@ -49,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,12 +97,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL'),
+        conn_max_age=600   # keep DB connection alive for 10 min — reduces overhead
+    )
 }
-
+# conn_max_age=600: persistent connections avoid the cost of a new DB handshake per request. In production, set this to a high value (e.g. 600) to improve performance. In development, you can set it to 0 to disable persistent connections and see DB changes immediately.
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
