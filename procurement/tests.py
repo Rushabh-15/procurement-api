@@ -7,6 +7,7 @@ from .services import run_three_way_match, get_overdue_invoices
 from rest_framework.test import APITestCase
 from rest_framework import status as http_status
 from datetime import date, timedelta
+from .services import parse_invoice_text, classify_invoice_category
 
 
 User = get_user_model()
@@ -179,3 +180,54 @@ class PurchaseOrderApproveTests(APITestCase):
         response = self.client.post(f'/api/purchase-orders/{self.po.id}/approve/')
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.data)
+
+class InvoiceParserTests(TestCase):
+    """Unit tests for the NLP parser — no DB, no HTTP, pure function testing."""
+
+    CLEAN_INVOICE = (
+        "Invoice from Tata Steel Ltd for Rs. 45,000 due 2024-03-31. "
+        "Reference: INV-TATA-2024-001. Steel rods and materials."
+    )
+    MESSY_INVOICE = "pls pay ₹12500 by next week thanks"
+    SERVICES_INVOICE = "Software consulting and support services license fee Rs. 80000 INV-SVC-001"
+
+    def test_clean_invoice_vendor_is_high_confidence(self):
+        result = parse_invoice_text(self.CLEAN_INVOICE)
+        self.assertEqual(result['vendor']['confidence'], 'HIGH')
+        self.assertIsNotNone(result['vendor']['value'])
+
+    def test_clean_invoice_amount_extracted(self):
+        result = parse_invoice_text(self.CLEAN_INVOICE)
+        self.assertEqual(result['amount']['confidence'], 'HIGH')
+        self.assertIn('45000', result['amount']['value'])
+
+    def test_clean_invoice_date_extracted(self):
+        result = parse_invoice_text(self.CLEAN_INVOICE)
+        self.assertEqual(result['due_date']['value'], '2024-03-31')
+        self.assertEqual(result['due_date']['confidence'], 'HIGH')
+
+    def test_clean_invoice_number_extracted(self):
+        result = parse_invoice_text(self.CLEAN_INVOICE)
+        self.assertIsNotNone(result['invoice_number']['value'])
+        self.assertIn('INV', result['invoice_number']['value'])
+
+    def test_clean_invoice_does_not_require_review(self):
+        result = parse_invoice_text(self.CLEAN_INVOICE)
+        self.assertFalse(result['requires_review'])
+
+    def test_messy_invoice_requires_review(self):
+        result = parse_invoice_text(self.MESSY_INVOICE)
+        self.assertTrue(result['requires_review'])
+
+    def test_goods_invoice_classified_correctly(self):
+        self.assertEqual(classify_invoice_category(self.CLEAN_INVOICE), 'GOODS')
+
+    def test_services_invoice_classified_correctly(self):
+        self.assertEqual(classify_invoice_category(self.SERVICES_INVOICE), 'SERVICES')
+
+    def test_empty_text_still_returns_structure(self):
+        """Parser must never crash — always return the full dict structure."""
+        result = parse_invoice_text('')
+        self.assertIn('vendor', result)
+        self.assertIn('amount', result)
+        self.assertTrue(result['requires_review'])

@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from .services import run_three_way_match, parse_invoice_text, get_overdue_invoices
+from rest_framework.parsers import JSONParser, MultiPartParser
+from .services import run_three_way_match, parse_invoice_text, get_overdue_invoices, extract_text_from_pdf
 from .models import Supplier, PurchaseOrder, GoodsReceiptNote, Invoice
 from .serializers import (
     SupplierSerializer, PurchaseOrderSerializer,
@@ -112,16 +113,34 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
 class InvoiceParseView(APIView):
     """Standalone view for the invoice parser — not a ModelViewSet."""
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser]  # accept both JSON and file uploads
+
 
     def post(self, request):
+        # Case 1: plain text in JSON body
         text = request.data.get('text', '')
+
+        # Case 2: PDF file upload
+        pdf_file = request.FILES.get('file')
+        if pdf_file:
+            try:
+                pdf_bytes = pdf_file.read()
+                text = extract_text_from_pdf(pdf_bytes)
+            except Exception as e:
+                return Response(
+                    {'error': f'PDF extraction failed: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         if not text.strip():
             return Response(
-                {'error': 'text field is required and cannot be empty.'},
+                {'error': 'Provide either "text" in JSON body or a "file" PDF upload.'},
                 status=status.HTTP_400_BAD_REQUEST
-                )
+            )
+
         result = parse_invoice_text(text)
-        return Response(result, status=status.HTTP_200_OK)
+        result['extracted_from'] = 'pdf' if pdf_file else 'text'
+        return Response(result)
     
 class GoodsReceiptNoteViewSet(viewsets.ModelViewSet):
     serializer_class   = GoodsReceiptNoteSerializer
