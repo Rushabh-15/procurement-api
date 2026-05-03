@@ -41,3 +41,25 @@ POST   /api/invoices/                      — create invoice + auto 3-way match
 POST   /api/invoices/{id}/match/           — manually trigger match
 GET    /api/invoices/overdue/              — all overdue invoices
 POST   /api/invoices/parse/               — extract fields from raw invoice text
+
+## Architecture decisions
+
+### Services layer
+Business logic (3-way match, NLP parsing, overdue detection) lives in `services.py`,
+not in views. Reasons: independently testable, reusable from Celery tasks, keeps
+views thin and readable.
+
+### NLP pipeline design
+Each field extractor is a separate private function (_extract_vendor, _extract_amount,
+etc.). This follows the Single Responsibility Principle — improving one extractor
+doesn't risk breaking others. spaCy's nlp.pipe() is used for batch processing to
+avoid per-call model loading overhead.
+
+### Why PostgreSQL over SQLite
+Full ACID transactions (required for atomic 3-way match), concurrent connections,
+JSONB support, and production parity with AWS RDS.
+
+### Authentication
+JWT (stateless) over sessions (stateful). Stateless auth scales horizontally without
+sticky sessions or shared session storage. Access tokens expire in 60 minutes;
+refresh tokens in 7 days with rotation enabled.
