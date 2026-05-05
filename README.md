@@ -20,27 +20,27 @@ Built to demonstrate Django, DRF, JWT auth, and business logic structuring.
 - 14 unit and integration tests
 
 ## Setup
-git clone https://github.com/Rushabh-15/procurement-api.git
-cd procurement-api
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
+- git clone https://github.com/Rushabh-15/procurement-api.git,
+- cd procurement-api,
+- python -m venv venv && source venv/bin/activate,
+- pip install -r requirements.txt,
+- python -m spacy download en_core_web_sm,
+- python manage.py migrate,
+- python manage.py createsuperuser,
+- python manage.py runserver,
 
 ## Run tests
 python manage.py test procurement --verbosity=2
 
 ## Core API endpoints
-POST   /auth/token/                        — obtain JWT
-GET    /api/suppliers/                     — list suppliers (paginated)
-POST   /api/purchase-orders/{id}/approve/  — approve a draft PO
-POST   /api/grns/                          — record goods receipt
-POST   /api/invoices/                      — create invoice + auto 3-way match
-POST   /api/invoices/{id}/match/           — manually trigger match
-GET    /api/invoices/overdue/              — all overdue invoices
-POST   /api/invoices/parse/               — extract fields from raw invoice text
+- POST   /auth/token/                        — obtain JWT,
+- GET    /api/suppliers/                     — list suppliers (paginated),
+- POST   /api/purchase-orders/{id}/approve/  — approve a draft PO,
+- POST   /api/grns/                          — record goods receipt,
+- POST   /api/invoices/                      — create invoice + auto 3-way match,
+- POST   /api/invoices/{id}/match/           — manually trigger match,
+- GET    /api/invoices/overdue/              — all overdue invoices,
+- POST   /api/invoices/parse/               — extract fields from raw invoice text,
 
 ## Architecture decisions
 
